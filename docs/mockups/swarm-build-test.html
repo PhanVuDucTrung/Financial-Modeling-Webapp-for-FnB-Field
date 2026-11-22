@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Test: agent dựng trang kết quả</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+@font-face{font-family:NR;font-style:normal;font-weight:200 800;src:url(fonts/newsreader-latin-wght-normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC}
+@font-face{font-family:NR;font-style:normal;font-weight:200 800;src:url(fonts/newsreader-vietnamese-wght-normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB}
+@font-face{font-family:NR;font-style:italic;font-weight:200 800;src:url(fonts/newsreader-latin-wght-italic.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC}
+@font-face{font-family:NR;font-style:italic;font-weight:200 800;src:url(fonts/newsreader-vietnamese-wght-italic.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB}
+@font-face{font-family:IN;font-weight:100 900;src:url(fonts/inter-latin-wght-normal.woff2);unicode-range:U+0000-00FF,U+0131,U+2000-206F,U+20AC}
+@font-face{font-family:IN;font-weight:100 900;src:url(fonts/inter-vietnamese-wght-normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB}
+:root{--bg:#f6f4ef;--ink:#111;--dim:#8a857d;--muted:#5f5a52;--acc:#ff6d29;--good:#1f9d63;--bad:#d93a3f;--warn:#c98a0a}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:var(--bg);font-family:IN,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;overflow:hidden}
+.serif{font-family:NR,serif;font-weight:500;letter-spacing:-.03em}.it{font-style:italic}
+/* ---- trang kết quả (bản rút gọn của trang Tổng quan) ---- */
+#app{position:fixed;inset:0;display:grid;grid-template-columns:280px 1fr;background:radial-gradient(900px 600px at -5% 10%,rgba(255,160,110,.35),transparent 65%),radial-gradient(800px 600px at 105% 100%,rgba(185,195,255,.5),transparent 65%),var(--bg)}
+#side{padding:20px 16px;display:flex;flex-direction:column}
+#logo{padding:14px 16px 24px;line-height:1;width:max-content}
+#logo b{display:block;font-family:NR;font-weight:500;font-size:26px;letter-spacing:-.02em}
+#logo small{display:block;margin-top:5px;font-size:10px;font-weight:600;letter-spacing:.34em;color:var(--acc)}
+.nav{padding:12px 16px;border-radius:16px;font-size:14.5px;color:var(--muted);display:flex;gap:14px;margin-bottom:4px}
+.nav i{font-style:normal;font-size:11.5px;font-weight:700;color:var(--dim)}
+.nav.on{background:#fff;color:var(--ink);font-weight:700;box-shadow:0 14px 30px -16px rgba(25,25,60,.4)}.nav.on i{color:var(--acc)}
+#main{overflow:hidden;position:relative;height:100vh}
+#scroll{height:100%;overflow:hidden;padding:30px 40px 80px}
+h1.page{font-family:NR;font-weight:500;font-size:42px;letter-spacing:-.03em;margin-bottom:18px}
+.wrap{max-width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+.hero{border-radius:34px;padding:40px;background:linear-gradient(120deg,#fff,#fbeee6);box-shadow:0 40px 80px -44px rgba(255,109,41,.45);display:grid;grid-template-columns:5fr 7fr;gap:48px}
+.lbl{font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--muted)}
+.verdict{font-family:NR;font-style:italic;font-weight:500;font-size:96px;line-height:.95;letter-spacing:-.03em;color:var(--warn);margin-top:14px}
+.crit{margin-bottom:22px}.crit .row{display:flex;justify-content:space-between;font-weight:700;font-size:15px}
+.crit .val{font-family:NR;font-size:38px;margin-top:6px;letter-spacing:-.03em}.bar{height:7px;background:rgba(0,0,0,.08);margin-top:12px;position:relative}.bar i{position:absolute;inset:0 auto 0 0}
+.bar u{position:absolute;top:-4px;bottom:-4px;width:2px;background:#111;left:50%}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.tile{border-radius:16px;padding:20px;background:rgba(255,255,255,.82);box-shadow:0 24px 50px -28px rgba(25,25,60,.35)}
+.tile .n{font-family:NR;font-size:44px;letter-spacing:-.03em;margin-top:8px;line-height:1}.tile .n small{font:500 14px IN;letter-spacing:0;margin-left:6px}
+.tile .s{font-size:12.5px;color:var(--dim);margin-top:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+.card h3{font-family:NR;font-weight:500;font-size:26px;letter-spacing:-.03em}.card h3 span{font:500 14px IN;color:var(--dim);margin-left:8px;letter-spacing:0}
+.card p.sub{font-size:13.5px;color:var(--dim);margin:6px 0 18px}
+.chart{background:#fff;border-radius:20px;height:300px;box-shadow:0 26px 50px -30px rgba(25,25,60,.32);padding:20px}
+.tm{display:grid;grid-template-columns:1.4fr 1fr .6fr;grid-template-rows:1fr 1fr;gap:8px;height:360px;background:#fff;border-radius:20px;padding:18px;box-shadow:0 26px 50px -30px rgba(25,25,60,.32)}
+.tm div{border-radius:8px;padding:10px 12px;font-size:13px;font-weight:600}.tm b{display:block;font-size:22px;margin-top:4px}
+ol.list{list-style:none;padding:0;display:grid;gap:14px;font-size:14.5px;color:var(--muted);line-height:1.5}ol.list b{color:var(--acc);margin-right:12px}
+/* ---- trạng thái chưa dựng ---- */
+body.building [data-b]{opacity:0;visibility:hidden}
+body.building [data-b].ph{visibility:visible;opacity:1;background-image:none!important}
+[data-b]{transition:opacity .6s ease}
+.ph{outline:1.5px dashed rgba(255,109,41,.7);outline-offset:-1px;background:rgba(0,0,0,.04)!important}
+.ph>*{opacity:0}
+/* ---- lớp agent ---- */
+#lock{position:fixed;inset:0;z-index:50;cursor:progress;display:none}
+body.locked #lock{display:block}
+#fx{position:fixed;inset:0;z-index:60;pointer-events:none}
+.ag{position:absolute;left:0;top:0;will-change:transform}
+.ag svg{display:block;filter:drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 14px var(--c))}
+.ag span{position:absolute;left:16px;top:18px;white-space:nowrap;font:700 11px IN;color:#06070a;background:var(--c);padding:3px 8px;border-radius:999px;box-shadow:0 0 14px var(--c)}
+.ag .dim{position:absolute;left:16px;top:42px;font:600 10.5px IN;color:#fff;background:rgba(10,12,20,.82);padding:2px 7px;border-radius:5px;white-space:nowrap}
+#box{position:fixed;z-index:55;pointer-events:none;border:1.5px solid var(--c,#ff6d29);background:color-mix(in srgb,var(--c,#ff6d29) 12%,transparent);display:none}
+.box{position:fixed;z-index:55;pointer-events:none;border:1.5px solid var(--c);background:color-mix(in srgb,var(--c) 10%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--c) 60%,transparent)}
+.caret::after{content:"";display:inline-block;width:2px;height:1em;background:var(--acc);margin-left:1px;vertical-align:-.12em;animation:bl .6s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+#intro{position:fixed;inset:0;z-index:40;background:var(--bg);display:grid;place-items:center;transition:opacity .8s}
+#intro canvas{width:560px;height:560px}
+#tools{position:fixed;right:16px;bottom:16px;z-index:100;display:flex;gap:8px;font:600 12px IN}
+#tools button{border:0;border-radius:999px;padding:9px 16px;background:#111;color:#fff;cursor:pointer;font:600 12px IN}
+#tools button.g{background:rgba(255,255,255,.9);color:#111}
+#status{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:100;font:600 12px IN;color:var(--muted);background:rgba(255,255,255,.85);padding:7px 14px;border-radius:999px;box-shadow:0 10px 30px -14px rgba(25,25,60,.4);opacity:0;transition:opacity .4s}
+</style></head>
+<body class="building">
+
+<div id="app">
+  <aside id="side">
+    <div id="logo" data-b="text"><b>Financial Model</b><small>FOR ENTERPRISE</small></div>
+    <div class="nav on" data-b="rect"><i>01</i>Tổng quan</div>
+    <div class="nav" data-b="rect"><i>02</i>Vận hành</div>
+    <div class="nav" data-b="rect"><i>03</i>Tài chính</div>
+    <div class="nav" data-b="rect"><i>04</i>Phân tích</div>
+    <div class="nav" data-b="rect"><i>05</i>Kế hoạch</div>
+    <div class="nav" data-b="rect"><i>06</i>Trợ lý AI</div>
+  </aside>
+  <div id="main"><div id="scroll"><div class="wrap">
+    <h1 class="page" data-b="text">Tổng quan</h1>
+    <section class="hero" data-b="rect">
+      <div><div class="lbl" data-b="text" style="color:var(--acc)">Lời khuyên</div>
+        <div class="verdict" data-b="text">Cân nhắc</div>
+        <p data-b="text" style="margin-top:28px;max-width:380px;color:var(--muted);line-height:1.6">Đạt 2/3 tiêu chí. Chưa đạt: biên an toàn.</p></div>
+      <div>
+        <div class="crit" data-b="rect"><div class="row"><span>Thời gian hoàn vốn</span><span style="color:var(--good)">Đạt</span></div><div class="val">sau 28.45 tháng</div><div class="bar"><i style="width:52%;background:var(--good)"></i><u></u></div></div>
+        <div class="crit" data-b="rect"><div class="row"><span>IRR</span><span style="color:var(--good)">Đạt</span></div><div class="val">34.71%</div><div class="bar"><i style="width:58%;background:var(--good)"></i><u></u></div></div>
+        <div class="crit" data-b="rect"><div class="row"><span>Biên an toàn</span><span style="color:var(--bad)">Chưa đạt</span></div><div class="val" style="color:var(--bad)">19.01%</div><div class="bar"><i style="width:38%;background:var(--bad)"></i><u></u></div></div>
+      </div>
+    </section>
+    <div class="kpis">
+      <div class="tile" data-b="rect"><div class="lbl">Doanh thu mỗi tháng</div><div class="n">273<small>triệu VND</small></div><div class="s">152 khách mỗi ngày</div></div>
+      <div class="tile" data-b="rect"><div class="lbl">Dòng tiền hoạt động</div><div class="n">41.43<small>triệu VND</small></div><div class="s">15.18% doanh thu</div></div>
+      <div class="tile" data-b="rect"><div class="lbl">Vốn đầu tư</div><div class="n">0.81<small>tỷ VND</small></div><div class="s">9.5 triệu VND mỗi m²</div></div>
+      <div class="tile" data-b="rect"><div class="lbl">NPV</div><div class="n" style="color:var(--good)">0.57<small>tỷ VND</small></div><div class="s">Chiết khấu 12% mỗi năm</div></div>
+    </div>
+    <div class="two">
+      <div class="card"><h3 data-b="text">Payback arrives in month 29 <span>(triệu VND)</span></h3><p class="sub" data-b="text">Từ tháng 0 đến 60, đã gồm vốn đầu tư.</p>
+        <div class="chart" data-b="media"><svg viewBox="0 0 560 260" width="100%" height="100%"><line x1="10" x2="550" y1="150" y2="150" stroke="#ccc" stroke-dasharray="4 4"/><path d="M10 215 C60 225 100 190 190 150 L550 40" fill="none" stroke="#1f9d63" stroke-width="3"/><path d="M190 150 L550 40 L550 150Z" fill="#1f9d63" opacity=".1"/><circle cx="190" cy="150" r="7" fill="#ff6d29"/></svg></div></div>
+      <div class="card"><h3 data-b="text">From revenue to operating cash <span>(triệu VND/tháng)</span></h3><p class="sub" data-b="text">Một tháng vận hành ổn định.</p>
+        <div class="chart" data-b="media"><svg viewBox="0 0 560 260" width="100%" height="100%"><rect x="20" y="30" width="50" height="190" fill="#111"/><rect x="100" y="30" width="50" height="8" fill="#ccc"/><rect x="180" y="38" width="50" height="70" fill="#ff6d29"/><rect x="260" y="108" width="50" height="60" fill="#ff8a54"/><rect x="340" y="168" width="50" height="30" fill="#f5b99a"/><rect x="420" y="198" width="50" height="25" fill="#f5cdb6"/><rect x="500" y="170" width="40" height="50" fill="#1f9d63"/></svg></div></div>
+    </div>
+    <div class="two">
+      <div class="card"><h3 data-b="text">Where every đồng of revenue goes <span>(% doanh thu)</span></h3><p class="sub" data-b="text">Diện tích và màu cam đậm theo độ lớn.</p>
+        <div class="tm" data-b="rect"><div style="background:#ff6d29;grid-row:1/3" data-b="text">Giá vốn<b>30%</b></div><div style="background:#ff8a54" data-b="text">Nhân công<b>26.8%</b></div><div style="background:#f6b08e" data-b="text">Điện nước<b>4%</b></div><div style="background:#f2a07a;grid-column:2" data-b="text">Thuê mặt bằng<b>14%</b></div><div style="background:#f6c7b0" data-b="text">Marketing<b>3.5%</b></div></div></div>
+      <div class="card"><h3 data-b="text">Risks to watch</h3><p class="sub" data-b="text">Rút ra từ các ngưỡng và độ nhạy của mô hình.</p>
+        <ol class="list"><li data-b="text"><b>1</b>Biên an toàn 19%: doanh số giảm 19% là chạm điểm hòa vốn.</li><li data-b="text"><b>2</b>Doanh thu cần 5 tháng để đạt công suất, dòng tiền giai đoạn đầu thấp hơn mức ổn định.</li><li data-b="text"><b>3</b>Kịch bản bi quan chuyển lời khuyên sang Không nên mở.</li></ol>
+        <h3 data-b="text" style="margin-top:34px">Recommended next steps</h3><p class="sub" data-b="text">Các việc nên làm tiếp theo trước khi chốt quyết định.</p>
+        <ol class="list"><li data-b="text"><b>1</b>Vòng quay ghế mỗi ngày: tăng 5%, lên 3.7 lần/ngày, để đạt Nên mở.</li><li data-b="text"><b>2</b>COGS: giảm 7%, còn 27.9%, để đạt Nên mở.</li></ol></div>
+    </div>
+  </div></div></div>
+</div>
+
+<div id="intro"><canvas id="sph" width="1120" height="1120"></canvas></div>
+<div id="lock"></div>
+<div id="fx"></div>
+<div id="status"></div>
+<div id="tools"><button class="g" id="replay">Replay</button><button class="g" id="spd">Tốc độ 1×</button></div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s)
+  const fx = $('#fx'), scroller = $('#scroll'), status = $('#status')
+  let SPEED = +(new URLSearchParams(location.search).get('speed') || 1)
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms / SPEED))
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+  const easeOut = (t) => 1 - Math.pow(1 - t, 3)
+  const tween = (ms, fn) => new Promise((res) => { const t0 = performance.now(); const f = (n) => { const k = Math.min(1, (n - t0) * SPEED / ms); fn(k); k < 1 ? requestAnimationFrame(f) : res() }; requestAnimationFrame(f) })
+  const say = (t) => { status.textContent = t; status.style.opacity = t ? 1 : 0 }
+
+  // ---- quả cầu mở đầu (bản rút gọn để thấy được chỗ các agent bay ra) ----
+  const cv = $('#sph'), cx = cv.getContext('2d')
+  let sphereRun = true, sphereFade = 1, sphT0 = performance.now()
+  const pts = []; const g = Math.PI * (3 - Math.sqrt(5)); for (let i = 0; i < 6000; i++) { const y = 1 - (i / 5999) * 2, r = Math.sqrt(1 - y * y), t = g * i; pts.push([Math.cos(t) * r, y, Math.sin(t) * r]) }
+  const sphLoop = (n) => {
+    if (!sphereRun) return
+    const t = (n - sphT0) / 1000, a = t * 0.5, ca = Math.cos(a), sa = Math.sin(a)
+    cx.clearRect(0, 0, 1120, 1120)
+    for (const p of pts) { const x = p[0] * ca + p[2] * sa, z = -p[0] * sa + p[2] * ca, y = p[1] * 0.95 - z * 0.3; const d = (z + 1) / 2
+      cx.fillStyle = `rgba(255,${Math.round(110 + d * 40)},60,${(0.15 + d * 0.65) * sphereFade})`; cx.fillRect(560 + x * 330, 560 + y * 330, 2, 2) }
+    requestAnimationFrame(sphLoop)
+  }
+  requestAnimationFrame(sphLoop)
+
+  // ---- agent ----
+  const COLORS = ['#ff2bd6', '#00f0ff', '#8dff1a', '#ffb800', '#b44dff']
+  const arrow = (c) => `<svg width="22" height="26" viewBox="0 0 22 26"><path d="M2 2 L2 20 L7 15.5 L10.5 23 L14 21.5 L10.5 14 L17 14 Z" fill="${c}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>`
+  const agents = COLORS.map((c, i) => {
+    const el = document.createElement('div'); el.className = 'ag'; el.style.setProperty('--c', c)
+    el.innerHTML = arrow(c) + `<span>Agent ${i + 1}</span><div class="dim" style="display:none"></div>`
+    fx.appendChild(el)
+    return { el, c, x: 0, y: 0, n: i + 1, dim: el.querySelector('.dim'), alive: true }
+  })
+  const place = (a) => { a.el.style.transform = `translate(${a.x}px,${a.y}px)` }
+  const setScale = (a, s, o = 1) => { a.el.style.transform = `translate(${a.x}px,${a.y}px) scale(${s})`; a.el.style.opacity = o }
+  const flyTo = async (a, tx, ty, ms = 700) => { const sx = a.x, sy = a.y; const bend = (Math.random() - 0.5) * 120; await tween(ms, (k) => { const e = ease(k); a.x = sx + (tx - sx) * e + Math.sin(k * Math.PI) * bend; a.y = sy + (ty - sy) * e - Math.sin(k * Math.PI) * 40; place(a) }) }
+  const rectOf = (el) => el.getBoundingClientRect()
+
+  // ---- danh sách việc dựng, theo thứ tự trong trang ----
+  const tasks = []
+  const prepare = () => {
+    tasks.length = 0
+    document.querySelectorAll('[data-b]').forEach((el, i) => {
+      el.classList.remove('ph', 'done'); el.style.removeProperty('opacity')
+      if (el.dataset.b === 'text') { if (!el.dataset.full) el.dataset.full = el.innerHTML }
+      tasks.push({ el, kind: el.dataset.b, state: 'todo', i })
+    })
+  }
+  const parentDone = (t) => { const p = t.el.parentElement?.closest('[data-b]'); if (!p) return true; const pt = tasks.find((x) => x.el === p); return !pt || pt.state === 'done' }
+  const next = () => tasks.find((t) => t.state === 'todo' && parentDone(t))
+
+  // ---- cuộn theo tiến độ ----
+  let scrollTarget = 0, scrollLoop = false
+  const maxScroll = () => scroller.scrollHeight - scroller.clientHeight
+  const follow = (y) => { scrollTarget = Math.max(scrollTarget, Math.min(maxScroll(), y)) }
+  const startScroller = () => { scrollLoop = true; const f = () => { if (!scrollLoop) return; scroller.scrollTop += (scrollTarget - scroller.scrollTop) * 0.06; requestAnimationFrame(f) }; requestAnimationFrame(f) }
+
+  // ---- một agent dựng một phần tử ----
+  const build = async (a, t) => {
+    const el = t.el
+    // đảm bảo phần tử nằm trong khung nhìn trước khi dựng
+    const r0 = rectOf(el)
+    const abs = r0.top + scroller.scrollTop
+    follow(abs - innerHeight * 0.35)
+    await sleep(120)
+    let r = rectOf(el)
+    // bay tới góc trên trái
+    await flyTo(a, r.left, r.top, 520 + Math.random() * 300)
+    r = rectOf(el)
+    if (t.kind === 'text') {
+      // kéo khung chữ rồi gõ
+      const b = document.createElement('div'); b.className = 'box'; b.style.setProperty('--c', a.c); fx.appendChild(b)
+      const w0 = rectOf(el); b.style.cssText += `;left:${w0.left}px;top:${w0.top}px;width:0;height:0`
+      await tween(280, (k) => { b.style.width = w0.width * easeOut(k) + 'px'; b.style.height = w0.height * easeOut(k) + 'px'; a.x = w0.left + w0.width * easeOut(k); a.y = w0.top + w0.height * easeOut(k); place(a) })
+      b.remove()
+      el.style.opacity = 1; el.style.visibility = 'visible'; el.classList.add('ph')
+      const full = el.dataset.full; const tmp = document.createElement('div'); tmp.innerHTML = full; const text = tmp.textContent
+      // gõ từng ký tự: giữ nguyên cấu trúc HTML bằng cách hiện dần các nút chữ
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); const nodes = []; let nd; while ((nd = walker.nextNode())) nodes.push([nd, nd.nodeValue]); nodes.forEach(([n]) => { n.nodeValue = '' })
+      el.classList.remove('ph'); el.style.removeProperty('background'); el.classList.add('caret')
+      const total = nodes.reduce((s, [, v]) => s + v.length, 0)
+      const per = Math.max(14, Math.min(34, 900 / Math.max(total, 1)))
+      let done = 0
+      for (const [n, v] of nodes) { for (let i = 1; i <= v.length; i++) { n.nodeValue = v.slice(0, i); done++; if (done % 2 === 0) { const rr = rectOf(el); a.x = Math.min(rr.right - 6, rr.left + (rr.width * done) / total); a.y = rr.top + rr.height * 0.6; place(a) } await sleep(per) } }
+      el.classList.remove('caret'); void text
+    } else {
+      // rect / media: kéo chéo, hiện W × H, rồi nội dung hiện ra
+      el.classList.add('ph'); el.style.visibility = 'visible'
+      const b = document.createElement('div'); b.className = 'box'; b.style.setProperty('--c', a.c); fx.appendChild(b)
+      a.dim.style.display = 'block'
+      const w = r.width, h = r.height
+      await tween(Math.min(900, 360 + (w + h) * 0.45), (k) => { const e = easeOut(k); const ww = w * e, hh = h * e
+        b.style.cssText += `;left:${r.left}px;top:${r.top}px;width:${ww}px;height:${hh}px`
+        a.x = r.left + ww; a.y = r.top + hh; place(a); a.dim.textContent = `${Math.round(ww)} × ${Math.round(hh)}` })
+      a.dim.style.display = 'none'; b.remove()
+      el.classList.remove('ph'); el.style.opacity = 0; el.style.visibility = 'visible'
+      await tween(420, (k) => { el.style.opacity = k })
+      el.style.removeProperty('opacity')
+    }
+    el.style.visibility = 'visible'; el.classList.add('done'); el.style.opacity = 1
+    t.state = 'done'
+  }
+  const agentLoop = async (a) => {
+    while (true) {
+      const t = next()
+      if (!t) { if (tasks.every((x) => x.state === 'done')) return; await sleep(60); continue }
+      t.state = 'doing'
+      await build(a, t)
+    }
+  }
+
+  // ---- kịch bản chính ----
+  let running = false
+  async function run() {
+    if (running) return; running = true
+    document.body.classList.add('building', 'locked'); scroller.scrollTop = 0; scrollTarget = 0
+    $('#intro').style.display = 'grid'; $('#intro').style.opacity = 1; sphereRun = true; sphereFade = 1; sphT0 = performance.now(); requestAnimationFrame(sphLoop)
+    agents.forEach((a) => { a.el.style.opacity = 0; a.x = innerWidth / 2 - 8; a.y = innerHeight / 2 - 10; place(a) })
+    prepare()
+    say('Phân tích xong, các agent bắt đầu dựng trang')
+    await sleep(1200)
+    // các agent bay ra từ quả cầu
+    agents.forEach((a, i) => { setTimeout(() => { a.el.style.transition = 'opacity .3s'; a.el.style.opacity = 1 }, i * 110 / SPEED) })
+    await Promise.all(agents.map((a, i) => (async () => {
+      const ang = (i / agents.length) * Math.PI * 2 - 0.6
+      await sleep(i * 110)
+      await flyTo(a, innerWidth / 2 + Math.cos(ang) * 420, innerHeight / 2 + Math.sin(ang) * 300, 800)
+    })()))
+    // nền quả cầu mờ dần, trang bắt đầu được dựng
+    sphereFade = 0.0; $('#intro').style.opacity = 0; setTimeout(() => { $('#intro').style.display = 'none'; sphereRun = false }, 800)
+    startScroller()
+    say('Đang dựng trang Tổng quan, vui lòng chờ')
+    await Promise.all(agents.map(agentLoop))
+    // dựng xong: cuộn ngược về đầu trang
+    say('Hoàn tất, quay về đầu trang')
+    await sleep(500)
+    scrollLoop = false
+    const s0 = scroller.scrollTop
+    await tween(1800, (k) => { scroller.scrollTop = s0 * (1 - ease(k)) })
+    // các agent chạy vào chữ Financial Model For Enterprise
+    const lg = rectOf($('#logo'))
+    await Promise.all(agents.map(async (a, i) => {
+      await sleep(i * 120)
+      await flyTo(a, lg.left + 30 + i * 26, lg.top + lg.height / 2 - 6, 900)
+      await tween(380, (k) => setScale(a, 1 - k, 1 - k))
+      a.el.style.opacity = 0
+    }))
+    $('#logo').animate([{ filter: 'drop-shadow(0 0 0 rgba(255,109,41,0))' }, { filter: 'drop-shadow(0 0 18px rgba(255,109,41,.9))' }, { filter: 'drop-shadow(0 0 0 rgba(255,109,41,0))' }], { duration: 900 })
+    document.body.classList.remove('building', 'locked')
+    say('Sẵn sàng. Bạn có thể bắt đầu sử dụng'); setTimeout(() => say(''), 2400)
+    running = false
+  }
+  // chặn mọi thao tác khi đang khóa
+  const block = (e) => { if (document.body.classList.contains('locked') && !e.target.closest('#tools')) { e.preventDefault(); e.stopPropagation() } }
+  ;['wheel', 'touchmove', 'keydown'].forEach((ev) => addEventListener(ev, block, { passive: false, capture: true }))
+  $('#replay').onclick = () => { agents.forEach((a) => setScale(a, 1, 0)); document.querySelectorAll('[data-b][data-full]').forEach((el) => { el.innerHTML = el.dataset.full }); running = false; run() }
+  $('#spd').onclick = (e) => { SPEED = SPEED === 1 ? 2 : SPEED === 2 ? 3 : 1; e.target.textContent = `Tốc độ ${SPEED}×` }
+  if (SPEED !== 1) $('#spd').textContent = `Tốc độ ${SPEED}×`
+  document.fonts.ready.then(() => run())
+})()
+</script></body></html>

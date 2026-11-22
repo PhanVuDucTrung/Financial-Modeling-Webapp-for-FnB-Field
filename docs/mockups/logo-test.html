@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Test logo 3D bằng điểm</title>
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:#f6f4ef;font-family:system-ui,sans-serif;color:#111}
+body{display:grid;grid-template-columns:360px 1fr;gap:0}
+.ref{padding:24px;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;background:rgba(255,255,255,.6)}
+.ref img{width:300px;border-radius:12px;background:#fff}
+.ref small{font-size:12.5px;color:#666;text-align:center;line-height:1.5}
+main{position:relative}
+canvas{width:100%;height:100%;display:block;cursor:grab}
+#bar{position:absolute;right:16px;bottom:16px;display:flex;gap:8px}
+#bar button{border:0;border-radius:999px;padding:9px 16px;background:#111;color:#fff;font:600 12px system-ui;cursor:pointer}
+#bar button.g{background:#fff;color:#111}
+#info{position:absolute;left:16px;bottom:16px;font:600 12px system-ui;color:#666}
+</style></head><body>
+<div class="ref"><img src="logo-ref.png" alt="logo gốc"><small>Logo gốc (chỉ lấy phần bên trong vòng tròn). Chấm tròn là phần lõm khoét vào hai cây que kề nhau.</small></div>
+<main><canvas id="c"></canvas><div id="info"></div>
+<div id="bar"><button class="g" id="mode">Màu: xanh đậm</button><button class="g" id="rot">Tự xoay: bật</button><button id="reset">Đặt lại</button></div></main>
+<script>
+(() => {
+  // ---------- hình học logo (đơn vị ảnh gốc 447 px, tâm 223,224, chia 156) ----------
+  const X0 = 223, Y0 = 224, S = 156
+  const U = (x) => (x - X0) / S, V = (y) => -(y - Y0) / S
+  const BARS = [[130, 112, 335], [162, 140, 306], [193, 107, 340], [224, 68, 380], [254, 107, 340], [285, 140, 306], [316, 112, 335]]
+  const DOTS = [[145, 221], [177, 239], [208, 197], [238, 239], [268, 207], [299, 175]]  // giữa hai cây que, i và i+1
+  const RB = 0.06, RD = 0.082, DENS = 3600
+  const pos = [], col = [], wall = []
+  const inHole = (x, y) => { for (const [dx, dy] of DOTS) { const ux = U(dx), uy = V(dy); if ((x - ux) ** 2 + (y - uy) ** 2 < RD * RD) return true } return false }
+  BARS.forEach(([px, top, bot], bi) => {
+    const cx = U(px), y0 = V(bot) + RB, y1 = V(top) - RB
+    const nCyl = Math.round(2 * Math.PI * RB * (y1 - y0) * DENS)
+    for (let n = 0; n < nCyl; n++) {
+      const t = Math.random() * Math.PI * 2, y = y0 + Math.random() * (y1 - y0)
+      const x = cx + Math.cos(t) * RB
+      if (inHole(x, y)) continue
+      pos.push(x, y, Math.sin(t) * RB); col.push(bi); wall.push(0)
+    }
+    for (const [cy0, sg] of [[y0, -1], [y1, 1]]) {
+      const nCap = Math.round(2 * Math.PI * RB * RB * DENS)
+      for (let n = 0; n < nCap; n++) {
+        const th = Math.random() * Math.PI * 2, ph = Math.acos(Math.random())
+        const x = cx + Math.cos(th) * Math.sin(ph) * RB, y = cy0 + sg * Math.cos(ph) * RB
+        if (inHole(x, y)) continue
+        pos.push(x, y, Math.sin(th) * Math.sin(ph) * RB); col.push(bi); wall.push(0)
+      }
+    }
+  })
+  // thành lõm của chấm tròn: mặt trụ của lỗ, chỉ lấy phần nằm trong thân cây que
+  DOTS.forEach(([dpx, dpy]) => {
+    const dx = U(dpx), dy = V(dpy)
+    for (let n = 0; n < 700; n++) {
+      const th = Math.random() * Math.PI * 2
+      const x = dx + Math.cos(th) * RD, y = dy + Math.sin(th) * RD
+      for (let bi = 0; bi < BARS.length; bi++) {
+        const cx = U(BARS[bi][0]); const ddx = x - cx
+        if (Math.abs(ddx) >= RB) continue
+        const [, top, bot] = BARS[bi]
+        if (y > V(top) - RB * 0.2 || y < V(bot) + RB * 0.2) continue
+        const zr = Math.sqrt(RB * RB - ddx * ddx)
+        pos.push(x, y, (Math.random() * 2 - 1) * zr); col.push(bi); wall.push(1)
+      }
+    }
+  })
+  const N = col.length
+  document.getElementById('info').textContent = N + ' điểm'
+
+  // ---------- vẽ ----------
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d')
+  const dpr = Math.min(devicePixelRatio || 1, 2)
+  const fit = () => { cv.width = cv.clientWidth * dpr; cv.height = cv.clientHeight * dpr }
+  fit(); addEventListener('resize', fit)
+  let yaw = 0, pitch = 0, vy = 0, vp = 0, drag = null, auto = true, mode = 0
+  cv.addEventListener('pointerdown', (e) => { drag = [e.clientX, e.clientY]; cv.style.cursor = 'grabbing' })
+  addEventListener('pointerup', () => { drag = null; cv.style.cursor = 'grab' })
+  addEventListener('pointermove', (e) => { if (!drag) return; vy = (e.clientX - drag[0]) * 0.008; vp = (e.clientY - drag[1]) * 0.008; yaw += vy; pitch = Math.max(-1.3, Math.min(1.3, pitch + vp)); drag = [e.clientX, e.clientY] })
+  const BLUE_A = [58, 138, 214], BLUE_B = [28, 44, 140], NAVY = [12, 28, 138]
+  const shade = (bi) => mode === 0 ? NAVY : BLUE_A.map((v, j) => Math.round(v + (BLUE_B[j] - v) * (bi / 6)))
+  document.getElementById('mode').onclick = (e) => { mode = 1 - mode; e.target.textContent = mode ? 'Màu: chuyển sắc' : 'Màu: xanh đậm' }
+  document.getElementById('rot').onclick = (e) => { auto = !auto; e.target.textContent = 'Tự xoay: ' + (auto ? 'bật' : 'tắt') }
+  document.getElementById('reset').onclick = () => { yaw = 0; pitch = 0; vy = vp = 0 }
+  const t0 = performance.now()
+  const draw = (now) => {
+    const W = cv.width, H = cv.height
+    ctx.clearRect(0, 0, W, H)
+    if (!drag) { yaw += vy; vy *= 0.94; pitch = Math.max(-1.3, Math.min(1.3, pitch + vp)); vp *= 0.94 }
+    const a = yaw + (auto ? Math.sin((now - t0) / 2200) * 0.55 : 0)
+    const ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(pitch), st = Math.sin(pitch)
+    const R = Math.min(W, H) * 0.34
+    const buckets = new Map()
+    for (let i = 0; i < N; i++) {
+      const lx = pos[i * 3], ly = pos[i * 3 + 1], lz = pos[i * 3 + 2]
+      const x3 = lx * ca + lz * sa, z2 = -lx * sa + lz * ca
+      const y3 = ly * ct - z2 * st, pz = ly * st + z2 * ct
+      const per = 1 / (1 - pz * 0.3)
+      const bx = W / 2 + x3 * R * per, by = H / 2 + y3 * R * per
+      const dep = Math.max(0, Math.min(1, (pz + 0.15) / 0.3))
+      const lvl = Math.round(dep * 3)
+      const key = col[i] * 8 + wall[i] * 4 + lvl
+      let p = buckets.get(key); if (!p) { p = new Path2D(); buckets.set(key, p) }
+      const s = Math.max(1.4, (1.5 + dep * 1.3) * dpr)
+      p.rect(Math.round(bx), Math.round(by), s, s)
+    }
+    for (const [key, p] of buckets) {
+      const bi = key >> 3, w = (key >> 2) & 1, lvl = key & 3
+      const c = shade(bi).map((v) => (w ? Math.round(v * 0.85) : v))
+      ctx.fillStyle = `rgba(${c.join(',')},${[0.55, 0.75, 0.9, 1][lvl]})`
+      ctx.fill(p)
+    }
+    requestAnimationFrame(draw)
+  }
+  requestAnimationFrame(draw)
+})()
+</script></body></html>

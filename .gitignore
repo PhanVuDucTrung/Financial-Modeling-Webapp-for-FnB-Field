@@ -1,0 +1,50 @@
+# Bí mật và cấu hình máy
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# File Excel gốc có sheet ẩn chứa dữ liệu thật, không đưa lên GitHub
+File Ref/
+*.xlsx
+*.xlsm
+*.xls
+
+# Dự án người dùng lưu từ backend và thư mục làm việc tạm của AI
+backend/projects/*
+!backend/projects/.gitkeep
+.ai-cwd/
+
+# Môi trường và thư viện cài lại được
+.venv/
+venv/
+node_modules/
+__pycache__/
+*.py[cod]
+
+# Kết quả build và cache
+dist/
+dist-ssr/
+*.tsbuildinfo
+.pytest_cache/
+.vite/
+.vercel/
+coverage/
+
+# Ghi chú làm việc nội bộ (đường dẫn máy)
+CLAUDE.md
+
+# Công cụ cục bộ
+.claude/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Log và rác hệ điều hành
+logs/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+*.local
